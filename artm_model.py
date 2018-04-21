@@ -17,7 +17,7 @@ def get_top_docs(model, output):
     doc_ids = doc_ids.sort_values(ascending=False)
     return doc_ids
 
-def rm_flat_dir(dir_path):
+def rm_dir(dir_path):
     for file_path in glob.glob(os.path.join(dir_path, "*")):
         os.remove(file_path)
     os.rmdir(dir_path)
@@ -25,26 +25,20 @@ def rm_flat_dir(dir_path):
 def transform(model, doc_path):
 
     pipeline = arbitrary.get_pipeline()
+    doc_file = open(doc_path)
+    vw_fd,vw_path = tempfile.mkstemp(prefix="upload", text=True)
+    vw_file = os.fdopen(vw_fd, "w")
+    batch_path = tempfile.mkdtemp(prefix="batch")
+    doc = pipeline.fit_transform(doc_file)
+    text_utils.VowpalWabbitSink(vw_file, lambda x: "upload") \
+              .fit_transform([doc])
 
-    try:
-        doc_file = open(doc_path)
-        vw_fd,vw_path = tempfile.mkstemp(prefix="upload", text=True)
-        vw_file = os.fdopen(vw_fd, "w")
-        batch_path = tempfile.mkdtemp(prefix="batch")
-        doc = pipeline.fit_transform(doc_file)
-        text_utils.VowpalWabbitSink(vw_file, lambda x: "upload") \
-                  .fit_transform([doc])
-
-        response = transform_one(model, vw_path, batch_path)
-        response = response[0].sort_values(ascending=False)
-        print(response.keys()[:3], response.values[:3])
-    except:
-        raise
-    finally:
-        doc_file.close()
-        #os.remove(doc_path)
-        #os.remove(vw_path)
-        #rm_flat_dir(batch_path)
+    response = transform_one(model, vw_path, batch_path)
+    response = response[0].sort_values(ascending=False)
+    doc_file.close()
+    #os.remove(doc_path)
+    #os.remove(vw_path)
+    #rm_dir(batch_path)
     return response.keys(), response.values
 
 def transform_one(model, vw_path, batch_path):
@@ -64,7 +58,7 @@ def get_docs_ids_by_topic(theta, topic_id):
 
 model = artm.ARTM(num_topics = 50)
 model.load(config.model)
-theta = pickle.load(open(config.model+"_theta", 'rb'))
+theta = pickle.load(open(config.model + "_theta", 'rb'))
 
 
 
