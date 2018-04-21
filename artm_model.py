@@ -30,7 +30,8 @@ def transform(model, doc_path, filename):
                   .fit_transform([doc])
         # Transform uploaded document and return its Theta matrix
         response = transform_one(model, vw_path, batch_path)
-        response = response[0].sort_values(ascending=False).keys()
+        response = response[0].sort_values(ascending=False)
+        print(response.keys()[:3], response.values[:3])
     except:
         raise
     finally:
@@ -40,7 +41,7 @@ def transform(model, doc_path, filename):
         # Delete temporary files/dirs
         #os.remove(vw_path)
         #rm_flat_dir(batch_path)
-    return response
+    return response.keys(), response.values
 
 def transform_one(model, vw_path, batch_path):
     transform_batch = artm.BatchVectorizer(data_format="vowpal_wabbit",
@@ -53,8 +54,8 @@ def transform_one(model, vw_path, batch_path):
 
 def get_docs_ids_by_topic(theta, topic_id):
     ptd = theta.loc[topic_id]
-    sorted_ptd = ptd[ptd >= 0.01].sort_values(ascending=False)
-    return sorted_ptd.keys()[:5]
+    sorted_ptd = ptd[ptd > 1e-10].sort_values(ascending=False)
+    return sorted_ptd[:5]
 
 
 model = artm.ARTM(num_topics = 50)

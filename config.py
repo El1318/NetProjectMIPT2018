@@ -10,7 +10,7 @@ class proxy_settings():
 
 
 database = 'datasets'
-collection = 'habrahabr'
-id_prefix = 'habr_'
-model = 'habr_model'
+collection = 'elementy'
+id_prefix = 'elem_'
+model = 'elem_model'
 
