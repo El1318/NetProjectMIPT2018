@@ -9,6 +9,13 @@ import text_utils
 import glob
 import config
 
+
+def get_random_doc(theta):
+    ptd = theta.columns
+    ptd = numpy.random.permutation(ptd)
+    return ptd[0]
+
+
 def get_top_docs(model, output):
     response, values = transform(model, output)
     doc_ids = values[0] * get_docs_ids_by_topic(theta, response[0])
@@ -17,13 +24,13 @@ def get_top_docs(model, output):
     doc_ids = doc_ids.sort_values(ascending=False)
     return doc_ids
 
+
 def rm_dir(dir_path):
     for file_path in glob.glob(os.path.join(dir_path, "*")):
         os.remove(file_path)
     os.rmdir(dir_path)
 
 def transform(model, doc_path):
-
     pipeline = arbitrary.get_pipeline()
     doc_file = open(doc_path)
     vw_fd,vw_path = tempfile.mkstemp(prefix="upload", text=True)
