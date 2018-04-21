@@ -1,5 +1,6 @@
 import tempfile
 import numpy
+import pandas
 import pickle
 import os
 import artm
@@ -8,37 +9,40 @@ import text_utils
 import glob
 import config
 
+def get_top_docs(model, output):
+    response, values = transform(model, output)
+    doc_ids = values[0] * get_docs_ids_by_topic(theta, response[0])
+    for i in range(1,5):
+       doc_ids = pandas.concat([doc_ids, values[i]*get_docs_ids_by_topic(theta, response[i])])
+    doc_ids = doc_ids.sort_values(ascending=False)
+    return doc_ids
+
 def rm_flat_dir(dir_path):
     for file_path in glob.glob(os.path.join(dir_path, "*")):
         os.remove(file_path)
     os.rmdir(dir_path)
 
-def transform(model, doc_path, filename):
-    # Initialize arbitrary pipeline
+def transform(model, doc_path):
+
     pipeline = arbitrary.get_pipeline()
 
     try:
-        # Initialize file resources
         doc_file = open(doc_path)
         vw_fd,vw_path = tempfile.mkstemp(prefix="upload", text=True)
         vw_file = os.fdopen(vw_fd, "w")
         batch_path = tempfile.mkdtemp(prefix="batch")
-        # Parse uploaded file
         doc = pipeline.fit_transform(doc_file)
-        # Save to Vowpal Wabbit file
         text_utils.VowpalWabbitSink(vw_file, lambda x: "upload") \
                   .fit_transform([doc])
-        # Transform uploaded document and return its Theta matrix
+
         response = transform_one(model, vw_path, batch_path)
         response = response[0].sort_values(ascending=False)
         print(response.keys()[:3], response.values[:3])
     except:
         raise
     finally:
-        # Delete uploaded file
         doc_file.close()
         #os.remove(doc_path)
-        # Delete temporary files/dirs
         #os.remove(vw_path)
         #rm_flat_dir(batch_path)
     return response.keys(), response.values

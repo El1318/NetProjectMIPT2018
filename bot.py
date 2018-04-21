@@ -4,6 +4,7 @@ import db
 import telebot
 import pandas
 from telebot import apihelper
+from telebot import types
 
 bot = telebot.TeleBot(config.token)
 if config.proxy == True:
@@ -12,23 +13,22 @@ if config.proxy == True:
 
 model = artm_model.model
 theta = artm_model.theta
+output_name = "message.txt"
 
 @bot.message_handler(content_types=["text"])
-def repeat_all_messages(message):
-    doc_file = open("message.txt", "w")
+def suggest_5articles(message):
+    doc_file = open(output_name, "w")
     doc_file.write(message.text)
     doc_file.close()
-    response, values = artm_model.transform(model, "message.txt", 'filename')
-    doc_ids = values[0] * artm_model.get_docs_ids_by_topic(theta, response[0])
-    for i in range(1,5):
-       doc_ids = pandas.concat([doc_ids, values[i]*artm_model.get_docs_ids_by_topic(theta, response[i])])
-    doc_ids = doc_ids.sort_values(ascending=False)
+    doc_ids = artm_model.get_top_docs(model, output_name)
     print(str(doc_ids))
-    response = ''
+    keyboard = types.InlineKeyboardMarkup()
     for doc in doc_ids.keys()[:5]:
-        response += str(db.collection.find_one({'_id': doc}, projection = ['title', 'url']))
-        response += '\n'
-    bot.send_message(message.chat.id, str(response))
+        title = str(db.collection.find_one({'_id': doc})['title'])
+        url = str(db.collection.find_one({'_id': doc})['url'])
+        url_button = types.InlineKeyboardButton(text=title, url=url)
+        keyboard.add(url_button)
+    bot.send_message(message.chat.id, "В этих статьях может быть что-то похожее:", reply_markup=keyboard)
 
 
 if __name__ == '__main__':
