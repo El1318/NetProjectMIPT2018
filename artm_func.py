@@ -10,6 +10,13 @@ import glob
 import config
 
 
+def get_top_tokens(model):
+    phi = model.get_phi(class_ids = 'text')
+    top_tokens = {}
+    for topic in phi.columns:
+        top_tokens[topic] = list(phi[topic].sort_values(ascending=False).keys()[:3])
+    return top_tokens
+
 def get_random_doc(theta):
     ptd = theta.columns
     ptd = numpy.random.permutation(ptd)
@@ -18,9 +25,9 @@ def get_random_doc(theta):
 
 def get_top_docs(model, output):
     response, values = transform(model, output)
-    doc_ids = values[0] * get_docs_ids_by_topic(theta, response[0])
+    doc_ids = values[0] * get_docs_ids_by_topic(response[0])
     for i in range(1,5):
-       doc_ids = pandas.concat([doc_ids, values[i]*get_docs_ids_by_topic(theta, response[i])])
+       doc_ids = pandas.concat([doc_ids, values[i]*get_docs_ids_by_topic(response[i])])
     doc_ids = doc_ids.sort_values(ascending=False)
     return doc_ids
 
@@ -57,7 +64,7 @@ def transform_one(model, vw_path, batch_path):
     return transform_theta[:-1] #the last topic is background
 
 
-def get_docs_ids_by_topic(theta, topic_id):
+def get_docs_ids_by_topic(topic_id):
     ptd = theta.loc[topic_id]
     sorted_ptd = ptd[ptd > 1e-10].sort_values(ascending=False)
     return sorted_ptd[:5]
