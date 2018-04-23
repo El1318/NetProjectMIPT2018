@@ -67,7 +67,7 @@ def suggest_5articles_from_text(message):
 def suggest_5articles_from_doc(message):
     file_path = bot.get_file(message.document.file_id).file_path
     file = bot.download_file(file_path)
-    doc_file = open(output_name, "w")
+    doc_file = open(output_name, "wb")
     doc_file.write(file)
     doc_file.close()
     doc_ids = artm_func.get_top_docs(model, output_name)
